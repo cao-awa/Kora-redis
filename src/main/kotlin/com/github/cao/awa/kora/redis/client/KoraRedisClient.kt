@@ -1,4 +1,4 @@
-package com.github.cao.awa.com.github.cao.awa.kora.redis
+package com.github.cao.awa.kora.redis.client
 
 import com.github.cao.awa.com.github.cao.awa.kora.redis.config.KoraRedisClientConfig
 import org.apache.logging.log4j.LogManager

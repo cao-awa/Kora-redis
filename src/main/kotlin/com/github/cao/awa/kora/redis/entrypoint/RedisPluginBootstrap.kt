@@ -1,6 +1,6 @@
 package com.github.cao.awa.kora.redis.entrypoint
 
-import com.github.cao.awa.com.github.cao.awa.kora.redis.KoraRedisClient
+import com.github.cao.awa.kora.redis.client.KoraRedisClient
 import com.github.cao.awa.com.github.cao.awa.kora.redis.config.KoraRedisClientConfig
 import com.github.cao.awa.kora.plugin.markPluginLoaded
 import org.apache.logging.log4j.LogManager
