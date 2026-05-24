@@ -1,11 +1,23 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.2.21'
     id 'java'
+    id 'maven-publish'
 }
-
 
 group = project.group_id
 version = project.version_name
+
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            groupId = project.group_id
+            artifactId = project.artifact_id
+            version = project.version_name
+
+            from components.java
+        }
+    }
+}
 
 repositories {
     mavenCentral()
@@ -25,5 +37,7 @@ test {
     useJUnitPlatform()
 }
 
-sourceCompatibility = JavaVersion.VERSION_24
-targetCompatibility = JavaVersion.VERSION_24
+java {
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
+}
