@@ -1,0 +1,26 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
+    id 'java'
+}
+
+
+group = project.group_id
+version = project.version_name
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://jitpack.io'
+    }
+}
+
+dependencies {
+    implementation 'com.github.cao-awa:Kora:1.0.6'
+}
+kotlin {
+    jvmToolchain(24)
+}
+
+test {
+    useJUnitPlatform()
+}
