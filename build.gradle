@@ -24,3 +24,6 @@ kotlin {
 test {
     useJUnitPlatform()
 }
+
+sourceCompatibility = JavaVersion.VERSION_24
+targetCompatibility = JavaVersion.VERSION_24
