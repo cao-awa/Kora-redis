@@ -1,6 +1,7 @@
 package com.github.cao.awa.kora.redis.client
 
 import com.github.cao.awa.com.github.cao.awa.kora.redis.config.KoraRedisClientConfig
+import com.github.cao.awa.kora.plugin.registerCleaner
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.BufferedReader
@@ -12,19 +13,24 @@ import java.net.Socket
 class KoraRedisClient(private val config: KoraRedisClientConfig) {
     companion object {
         private val LOGGER: Logger = LogManager.getLogger("KoraRedisClient")
-        private lateinit var REAL_INSTANCE: KoraRedisClient
+        private var REAL_INSTANCE: KoraRedisClient? = null
         val INSTANCE: KoraRedisClient
-            get() = REAL_INSTANCE
+            get() = REAL_INSTANCE!!
 
         fun init(config: KoraRedisClientConfig) {
             REAL_INSTANCE = KoraRedisClient(config)
 
             try {
-                REAL_INSTANCE.connect()
+                INSTANCE.connect()
 
                 LOGGER.info("Initialized redis client, connected to ${config.host()}:${config.port()}")
             } catch (e: Exception) {
                 throw IllegalStateException("Cannot initialize redis client", e)
+            }
+
+            registerCleaner("kora-redis-instance") {
+                INSTANCE.disconnect()
+                REAL_INSTANCE = null
             }
         }
     }
