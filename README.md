@@ -37,7 +37,7 @@ In produce environment, you need put the ``kora-redis`` jar to ``libs/`` directo
 ```json
 {
     "entrypoint": [
-        "kora-redis",
+        "kora-redis-client",
         "com.yourservice.xxx.ServiceEntrypoint#entry"
     ]
 }

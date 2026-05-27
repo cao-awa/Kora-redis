@@ -1,4 +1,4 @@
 {
-    "name": "kora-redis",
+    "name": "kora-redis-client",
     "entrypoint": "com.github.cao.awa.kora.redis.entrypoint.RedisPluginBootstrap#init"
 }
