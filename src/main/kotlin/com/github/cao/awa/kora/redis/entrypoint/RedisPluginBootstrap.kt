@@ -2,14 +2,12 @@ package com.github.cao.awa.kora.redis.entrypoint
 
 import com.github.cao.awa.kora.redis.client.KoraRedisClient
 import com.github.cao.awa.com.github.cao.awa.kora.redis.config.KoraRedisClientConfig
-import com.github.cao.awa.kora.plugin.markPluginLoaded
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
 
 object RedisPluginBootstrap {
     private val LOGGER: Logger = LogManager.getLogger("RedisPluginBootstrap")
-    val NAME: String = "kora-redis"
 
     @JvmStatic
     fun init() {
@@ -17,7 +15,5 @@ object RedisPluginBootstrap {
         val configFile = File("configs/redis_client.json")
 
         KoraRedisClient.init(KoraRedisClientConfig.createConfig(configFile))
-
-        markPluginLoaded(NAME)
     }
 }
