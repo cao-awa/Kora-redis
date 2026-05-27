@@ -2,13 +2,16 @@ package com.github.cao.awa.kora.redis.client
 
 import com.github.cao.awa.com.github.cao.awa.kora.redis.config.KoraRedisClientConfig
 import com.github.cao.awa.kora.plugin.registerCleaner
+import com.github.cao.awa.kora.status.KoraStatus
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.net.ConnectException
 import java.net.Socket
+import java.util.Random
 
 class KoraRedisClient(private val config: KoraRedisClientConfig) {
     companion object {
@@ -16,6 +19,7 @@ class KoraRedisClient(private val config: KoraRedisClientConfig) {
         private var REAL_INSTANCE: KoraRedisClient? = null
         val INSTANCE: KoraRedisClient
             get() = REAL_INSTANCE!!
+        private lateinit var daemonThread: Thread
 
         fun init(config: KoraRedisClientConfig) {
             REAL_INSTANCE = KoraRedisClient(config)
@@ -23,26 +27,75 @@ class KoraRedisClient(private val config: KoraRedisClientConfig) {
             try {
                 INSTANCE.connect()
 
-                LOGGER.info("Initialized redis client, connected to ${config.host()}:${config.port()}")
-            } catch (e: Exception) {
-                throw IllegalStateException("Cannot initialize redis client", e)
-            }
+                KoraStatus.registerLifecycle("Kora-redis", INSTANCE)
 
-            registerCleaner("kora-redis-instance") {
-                INSTANCE.disconnect()
-                REAL_INSTANCE = null
+                KoraStatus.registerReloadListener {
+                    INSTANCE.close()
+                    this.daemonThread.interrupt()
+                    KoraStatus.completedLifecycle(INSTANCE)
+                }
+
+                KoraStatus.registerStopListener {
+                    INSTANCE.close()
+                    this.daemonThread.interrupt()
+                    KoraStatus.completedLifecycle(INSTANCE)
+                }
+
+                registerCleaner("kora-redis-instance") {
+                    REAL_INSTANCE = null
+                    LOGGER.info("Kora Redis client lifecycle ending")
+                }
+
+                val random = Random()
+                this.daemonThread = Thread.startVirtualThread {
+                    try {
+                        while (INSTANCE.isRunning) {
+                            Thread.sleep(1000)
+                            try {
+                                INSTANCE["${random.nextInt()}"]
+                            } catch (e: Exception) {
+                                LOGGER.warn("Redis server closed")
+                                INSTANCE.close()
+                                while (!INSTANCE.isRunning) {
+                                    Thread.sleep(config.reconnectTime().toLong())
+                                    LOGGER.info("Trying to reconnect to Redis server")
+                                    try {
+                                        INSTANCE.connect()
+                                        LOGGER.info("Connected to Redis server on ${config.host()}:${config.port()}")
+                                    } catch (e: ConnectException) {
+                                        LOGGER.warn("Failed to reconnect to Redis server, try again after {} ms", config.reconnectTime())
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: InterruptedException) {
+                        LOGGER.info("Kora Redis client daemon thread exited")
+                    }
+                }
+
+                LOGGER.info("Initialized Redis client, connected to ${config.host()}:${config.port()}")
+            } catch (e: Exception) {
+                throw IllegalStateException("Cannot initialize Redis client", e)
             }
         }
     }
 
+    private var isRunning = false
     private lateinit var socket: Socket
     private lateinit var reader: BufferedReader
     private lateinit var writer: BufferedWriter
 
     fun connect() {
-        this.socket = Socket(config.host(), config.port())
+        val socket = Socket(this.config.host(), this.config.port())
+        socket.tcpNoDelay = true
+        this.socket = socket
         this.reader = BufferedReader(InputStreamReader(this.socket.getInputStream()))
         this.writer = BufferedWriter(OutputStreamWriter(this.socket.getOutputStream()))
+        this.isRunning = true
+    }
+
+    fun isClosed(): Boolean {
+        return this.socket.isClosed
     }
 
     operator fun set(key: String, value: String) {
@@ -100,9 +153,10 @@ class KoraRedisClient(private val config: KoraRedisClientConfig) {
         }
     }
 
-    fun disconnect() {
+    fun close() {
         this.reader.close()
         this.writer.close()
         this.socket.close()
+        this.isRunning = false
     }
 }

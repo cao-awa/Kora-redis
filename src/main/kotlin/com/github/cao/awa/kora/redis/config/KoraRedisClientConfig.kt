@@ -18,6 +18,10 @@ open class KoraRedisClientConfig: KoraConfig() {
                     config.port = this
                 }
 
+                ifInt("reconnect_time") {
+                    config.reconnectTime = this
+                }
+
                 config
             }
         }
@@ -25,6 +29,7 @@ open class KoraRedisClientConfig: KoraConfig() {
 
     private var host: String = "127.0.0.1"
     private var port: Int = 6379
+    private var reconnectTime: Int = 5000
 
     fun host(): String {
         return this.host
@@ -44,10 +49,20 @@ open class KoraRedisClientConfig: KoraConfig() {
         return this
     }
 
+    fun reconnectTime(): Int {
+        return this.reconnectTime
+    }
+
+    open fun reconnectTime(time: Int): KoraRedisClientConfig {
+        this.reconnectTime = time
+        return this
+    }
+
     override fun toJSON(): JSONObject {
         return JSONObject {
             "host" set host
             "port" set port
+            "reconnect_time" set reconnectTime
         }
     }
 }
